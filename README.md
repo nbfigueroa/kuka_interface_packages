@@ -1,7 +1,8 @@
 # kuka_interface_packages
+This repo includes packages needed to control the KUKA Robots with a modular interface. (i.e. as a seperate "KUKA" bridge mode)
 
-You also need motion-generators!
-
-Install it in this directory from this link:
-
-https://github.com/epfl-lasa/motion-generators.git
+##Dependencies:
+motion-generators (from epfl-lasa):
+```
+git clone https://github.com/epfl-lasa/motion-generators.git
+```
