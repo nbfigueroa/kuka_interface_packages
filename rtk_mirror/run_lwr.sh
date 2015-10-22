@@ -1,6 +1,5 @@
 #!/bin/bash
 source ~/.bashrc
-roscd rtk_pkg_tools
-cd ../
-#cd /home/nbfigueroa/catkin_ws/src/robot-toolkit
+rtk_pkg_tools_path=$(rospack find rtk_pkg_tools)
+cd $rtk_pkg_tools_path/..
 sudo -E ./bin/LWRMain --config packages/rtk_mirror/KUKAMirror
