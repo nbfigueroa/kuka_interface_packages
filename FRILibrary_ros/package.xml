@@ -1,0 +1,18 @@
+<package>
+  <name>frilibrary_ros</name>
+  <version>0.1.0</version>
+
+  <description>
+
+     FRILibrary_ros
+
+  </description>
+  <maintainer email="ashwini.shukla@epfl.ch">Ashwini</maintainer>
+  <author email="ashwini.shukla@epfl.ch">Ashwini</author>
+  <license>BSD</license>
+  <url>http://ros.org/wiki/FRILibrary_ros</url>
+  <buildtool_depend>catkin</buildtool_depend> 
+</package>
+
+
+

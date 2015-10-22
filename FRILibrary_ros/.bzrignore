@@ -1,0 +1,9 @@
+.project
+.cproject
+.pydevproject
+build
+bin
+src/DisplayThread.cpp
+src/testN.cpp
+.svn
+*.svn*

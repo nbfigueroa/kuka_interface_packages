@@ -1,0 +1,8 @@
+.project
+.cproject
+.pydevproject
+build
+bin
+FRILibrary_rosConfig.cmake
+.svn
+*.svn*

@@ -1,0 +1,57 @@
+<Config>
+
+<Packages> LWRInterface </Packages>
+    <World> 
+
+</World>
+    <Robot> KUKA
+        <Name> KUKA </Name>
+        <RobotModule> ExampleTracker
+            <Options>
+            </Options>
+        </RobotModule> 
+        <ControlMode>  position    </ControlMode>
+        <Args>                    </Args>
+
+        <Origin>  0 0.0 0.0 </Origin>
+        <Orient> 1.0  0.0  0.0 
+                  0.0 1.0  0.0
+                  0.0  0.0  1.0
+        </Orient>            
+    </Robot>
+
+<Simulator>
+<Aspect>
+
+<BackgroundColor> 0.9 0.9 .9 </BackgroundColor>
+	<Lights>
+		<Light>
+  <AmbientColor> 0.3 0.3 0.3
+</AmbientColor>
+<DiffuseColor> 0.4 0.4 0.4
+</DiffuseColor>
+<Position> 10.0 -10.0 10.0
+</Position>
+<Direction> -10.0 10.0 -10.0
+</Direction>
+</Light>
+
+<Light>
+  <AmbientColor> 0.3 0.3 0.3
+</AmbientColor>
+<DiffuseColor> 0.3 0.3 0.3 
+</DiffuseColor>
+
+<Position> -10.0 10.0 10.0
+</Position>
+<Direction> 10.0 -10.0 -10.0
+</Direction>
+</Light>
+
+	</Lights>
+
+</Aspect>
+</Simulator>
+    
+</Config>
+
