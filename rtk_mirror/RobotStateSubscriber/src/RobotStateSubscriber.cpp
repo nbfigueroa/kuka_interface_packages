@@ -72,8 +72,10 @@ RobotInterface::Status RobotStateSubscriber::RobotInit(){
 	nh = mRobot->InitializeROS(nodename);
 
 	string topicName = mRobot->GetName();
+	//topicName += "/joint_cmd";
+	//topicName = "/KUKA/joint_cmd";
 	topicName += "/joint_cmd";
-	ndof = 0;
+         ndof = 0;
 	while(true)
 	{
 		if(mRobot->GetDOFIndex("DOF_" + boost::lexical_cast<string>(ndof++)) < 0)
@@ -95,9 +97,9 @@ RobotInterface::Status RobotStateSubscriber::RobotInit(){
 	jointVelocities.Resize(ndof);
 	prevJointVelocities.Resize(ndof);
 
-
-	jointStateSubscriber = nh->subscribe(topicName,1,&RobotStateSubscriber::jointStateCallback,this);
-
+//		GetConsole()->Print("Before subs");
+	jointStateSubscriber = nh->subscribe("/KUKA/joint_cmd",100,&RobotStateSubscriber::jointStateCallback,this);
+	chatterSub = nh->subscribe("chatter", 1000,&RobotStateSubscriber::chatterCallback, this);
 
 
 	nEndEffectorId = mRobot->GetLinkIndex("TOOL");
@@ -125,7 +127,7 @@ RobotInterface::Status RobotStateSubscriber::RobotInit(){
 
 
 	bFilter = false;
-	bControl=0;
+	bControl = 0;
 	bGrav = false;
 
 	sub_pose = false;
@@ -147,8 +149,8 @@ RobotInterface::Status RobotStateSubscriber::RobotInit(){
 	// ===================================================
 	// ========  Initialize CDDynamics         ===========
 	// ===================================================
-    module_dt = dt;
-    fri_dt = dt;
+        module_dt = dt;
+        fri_dt = dt;
 	genCart = new CDDynamics(6, dt, 1); // In cartesian space x, y, z, wx, wy, wz
 	Vector vel_lim_cart(6);
 	vel_lim_cart = DEG2RAD(80);
@@ -245,7 +247,8 @@ RobotInterface::Status RobotStateSubscriber::RobotUpdate(){
 RobotInterface::Status RobotStateSubscriber::RobotUpdateCore(){
 
   // Removing spin from here since the robot object is spinning ros now.
-  //ros::spinOnce();
+  // FUCKING LINE!!!
+  ros::spinOnce();
 
 		if(bSync)
 		{
@@ -325,7 +328,7 @@ RobotInterface::Status RobotStateSubscriber::RobotUpdateCore(){
 					jointPositions[i] += jointVelocities[i]*((LWRRobot*)mRobot)->GetSamplingTime();
 				}
 			}
-			GetConsole()->Print("RobotUpdateCore () inside Interface Velocity");
+			//GetConsole()->Print("RobotUpdateCore () inside Interface Velocity");
 		}
 
 		///----Filter----///
@@ -336,14 +339,14 @@ RobotInterface::Status RobotStateSubscriber::RobotUpdateCore(){
 			filter->Update(((LWRRobot*)mRobot)->GetSamplingTime());
 			filter->GetState(filtered_joints);
 			//			filtered_joints.Print("F");
-			GetConsole()->Print("RobotUpdateCore () inside bFilter");
+			//GetConsole()->Print("RobotUpdateCore () inside bFilter");
 		}
 		else
 		{
 			if (bControl==1){
 				for(int i=0;i<ndof;i++)
 								filtered_joints[i] = jointPositions[i];
-							GetConsole()->Print("RobotUpdateCore () not bFilter");
+							//GetConsole()->Print("RobotUpdateCore () not bFilter");
 			}
 		}
 
@@ -354,7 +357,11 @@ RobotInterface::Status RobotStateSubscriber::RobotUpdateCore(){
 			actuators.SetJointPositions(cmd_positions);
 			actuators.WriteActuators();
 
-			GetConsole()->Print("RobotUpdateCore () sending joint commands");
+			std::ostringstream ssj;
+			ssj <<"Joint Commands: " <<cmd_positions[0] << " " << cmd_positions[1] << " " <<  cmd_positions[2] << "  "<< cmd_positions[3] << " " << cmd_positions[4] << " " <<  cmd_positions[5] << " ...";
+			std::string msgj(ssj.str());
+			//GetConsole()->Print(msgj);
+			//GetConsole()->Print("RobotUpdateCore () sending joint commands");
 		}
 		if(bControl==2){
 			((LWRRobot*)(mRobot))->SetControlMode(Robot::CTRLMODE_CARTIMPEDANCE);
@@ -547,11 +554,13 @@ int RobotStateSubscriber::RespondToConsoleCommand(const string cmd, const vector
 
 void RobotStateSubscriber::jointStateCallback(const sensor_msgs::JointState::ConstPtr &msg)
 {
+
 	if(init_mode == INTERFACE_VELOCITY) {
 		if(msg->velocity.size() != ndof) {
 			cout<<"Size mismatch in velocity!"<<endl;
 			return;
 		}
+
 
 		double d = ((LWRRobot*)mRobot)->GetSamplingTime();
 		for(int i=0;i<ndof;i++){
@@ -624,6 +633,15 @@ void RobotStateSubscriber::ftStateCallback(const geometry_msgs::WrenchStampedCon
 		eeFT[i] = force;
 	}
 
+}
+
+
+void RobotStateSubscriber::chatterCallback(const std_msgs::String::ConstPtr& msg)
+{
+//  ROS_INFO("I heard: [%s]", msg->data.c_str());
+
+
+			GetConsole()->Print(msg->data);
 }
 
 

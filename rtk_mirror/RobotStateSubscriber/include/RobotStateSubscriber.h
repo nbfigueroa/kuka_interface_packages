@@ -19,6 +19,7 @@
 
 #include "RobotLib/RobotInterface.h"
 #include "ros/ros.h"
+#include "std_msgs/String.h"
 #include "sensor_msgs/JointState.h"
 #include "geometry_msgs/PoseStamped.h"
 #include "geometry_msgs/WrenchStamped.h"
@@ -28,7 +29,6 @@
 #include "CDDynamics.h"
 #include "tf/LinearMath/Quaternion.h"
 #include <tf/tf.h>
-
 
 
 // Translational Stiffness values
@@ -52,6 +52,7 @@ class RobotStateSubscriber : public RobotInterface
     ros::Subscriber cartStateSubscriber;
     ros::Subscriber ftStateSubscriber;
     ros::Subscriber stiffStateSubscriber;
+    ros::Subscriber chatterSub;
 
     RevoluteJointActuatorGroup actuators;
     RevoluteJointSensorGroup sensors;
@@ -109,6 +110,8 @@ public:
     void cartStateCallback(const geometry_msgs::PoseStampedConstPtr& msg);
 
     void ftStateCallback(const geometry_msgs::WrenchStampedConstPtr& msg);
+	
+    void chatterCallback(const std_msgs::String::ConstPtr& msg);
 
     void stiffStateCallback(const geometry_msgs::TwistStampedConstPtr& msg);
 
