@@ -24,7 +24,8 @@
 #include "geometry_msgs/PoseStamped.h"
 #include "geometry_msgs/WrenchStamped.h"
 #include "geometry_msgs/TwistStamped.h"
-#include "rtk_mirror/StringService.h"
+#include "kuka_fri_bridge/StringService.h"
+#include "kuka_fri_bridge/JointStateImpedance.h"
 #include "KUKARobotModel/LWRRobot.h"
 #include "CDDynamics.h"
 #include "tf/LinearMath/Quaternion.h"
@@ -49,6 +50,7 @@ class RobotStateSubscriber : public RobotInterface
 
     ros::NodeHandle * nh;
     ros::Subscriber jointStateSubscriber;
+    ros::Subscriber jointStateImpedanceSubscriber;
     ros::Subscriber cartStateSubscriber;
     ros::Subscriber ftStateSubscriber;
     ros::Subscriber stiffStateSubscriber;
@@ -56,8 +58,8 @@ class RobotStateSubscriber : public RobotInterface
 
     RevoluteJointActuatorGroup actuators;
     RevoluteJointSensorGroup sensors;
-    Vector jointPositions, jointVelocities, prevJointVelocities, jointMax, jointMin;
-    Vector cmd_positions, cmd_velocities;
+    Vector jointPositions, jointVelocities, jointStiffness, prevJointVelocities, jointMax, jointMin;
+    Vector cmd_positions, cmd_velocities, cmd_stiffness;
     Vector  des_ee_ft, des_ee_stiff;
     Vector3 des_ee_pos, prev_ee_pos;
     Matrix3 des_ee_orient, prev_ee_orient;
@@ -65,7 +67,7 @@ class RobotStateSubscriber : public RobotInterface
     unsigned int ndof;
     IndicesVector joint_map;
     ros::ServiceServer mService;
-//    bool bControl, bFilter, bGrav, bSync;
+
     bool bFilter, bGrav, bSync;
     int bControl;
     bool sub_pose, sub_stiff, sub_ft;
@@ -107,6 +109,8 @@ public:
 
     void jointStateCallback(const sensor_msgs::JointState::ConstPtr & msg);
 
+    void jointStateImpedanceCallback(const kuka_fri_bridge::JointStateImpedance::ConstPtr & msg);
+
     void cartStateCallback(const geometry_msgs::PoseStampedConstPtr& msg);
 
     void ftStateCallback(const geometry_msgs::WrenchStampedConstPtr& msg);
@@ -115,7 +119,7 @@ public:
 
     void stiffStateCallback(const geometry_msgs::TwistStampedConstPtr& msg);
 
-    bool serviceCallback(rtk_mirror::StringService::Request& reques,rtk_mirror::StringService::Response& response);
+    bool serviceCallback(kuka_fri_bridge::StringService::Request& reques,kuka_fri_bridge::StringService::Response& response);
 
     void slerp_interpolator(Vector3 currPos, Matrix3 currOrient, Vector3& targetPos, Matrix3& targetOrient);
 

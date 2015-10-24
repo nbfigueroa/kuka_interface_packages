@@ -59,10 +59,10 @@ RobotInterface::Status RobotStateSubscriber::RobotInit(){
 
 	if(interf == "velocity") {
 		init_mode = INTERFACE_VELOCITY;
-		cout<<"Using velocity control";
+        GetConsole()->Print("Using Velocity/Impendance Control Interface");
 	} else {
 		init_mode = INTERFACE_POSITION;
-		cout<<"Using position/impedance control";
+        GetConsole()->Print("Using Position/Impedance Control Interface");
 	}
 
 	//--- Initializing ROS Node and Subscriber Topics ---//
@@ -97,9 +97,12 @@ RobotInterface::Status RobotStateSubscriber::RobotInit(){
 	jointVelocities.Resize(ndof);
 	prevJointVelocities.Resize(ndof);
 
-//		GetConsole()->Print("Before subs");
+
 	jointStateSubscriber = nh->subscribe("/KUKA/joint_cmd",100,&RobotStateSubscriber::jointStateCallback,this);
-	chatterSub = nh->subscribe("chatter", 1000,&RobotStateSubscriber::chatterCallback, this);
+    jointStateImpedanceSubscriber = nh->subscribe("/KUKA/joint_imp_cmd",100,&RobotStateSubscriber::jointStateImpedanceCallback,this);
+
+    ///-- Test Subscriber, to check that msgs are being sent! ---///
+    chatterSub = nh->subscribe("chatter", 1000,&RobotStateSubscriber::chatterCallback, this);
 
 
 	nEndEffectorId = mRobot->GetLinkIndex("TOOL");
@@ -107,7 +110,7 @@ RobotInterface::Status RobotStateSubscriber::RobotInit(){
 		if (nEndEffectorId == -1)
 			GetConsole()->Print("ERROR: End effector not found");
 
-	//--- New Subscribers to have Cartesian Impedance control ---//f
+    ///--- New Subscribers to have Cartesian Impedance control ---//
 	topicName = mRobot->GetName();
 	topicName += "/des_ee_pose";
 	cartStateSubscriber = nh->subscribe(topicName,1,&RobotStateSubscriber::cartStateCallback,this);
@@ -195,6 +198,9 @@ RobotInterface::Status RobotStateSubscriber::RobotStart(){
 		GetConsole()->Print("Starting Robot in JointImpedance ()");
 	}
 
+    // Set initial joint Stiffness values
+    jointStiffness = default_stiff*0.5;
+
 	// Get initial joint positions
 	sensors.ReadSensors();
 	cmd_positions = sensors.GetJointPositions();
@@ -250,6 +256,7 @@ RobotInterface::Status RobotStateSubscriber::RobotUpdateCore(){
   // FUCKING LINE!!!
   ros::spinOnce();
 
+        ///-- This is run once, only during first Robot sync() --//
 		if(bSync)
 		{
 				sensors.ReadSensors();
@@ -268,7 +275,7 @@ RobotInterface::Status RobotStateSubscriber::RobotUpdateCore(){
 			if (bControl == 2){
 				((LWRRobot*)(mRobot))->SetControlMode(Robot::CTRLMODE_CARTIMPEDANCE);
 
-				// Synchronize Cartesian Position
+                ///-- Synchronize Cartesian Position --//
 				Vector    x_state;
 				x_state.Resize(6, false);
 				Vector3 tmppos;Matrix3 tmporient;
@@ -290,7 +297,7 @@ RobotInterface::Status RobotStateSubscriber::RobotUpdateCore(){
 				eePos = des_ee_pos;
 				eeOrient = des_ee_orient;
 
-				// Synchronize Cartesian Stiffness
+                ///-- Synchronize Cartesian Stiffness --///
 				des_ee_stiff.Resize(6); des_ee_stiff.Zero();
 				des_ee_stiff = ((LWRRobot*)mRobot)->GetCartStiffness();
 				Vector cartStiffness;
@@ -302,7 +309,7 @@ RobotInterface::Status RobotStateSubscriber::RobotUpdateCore(){
 				total_time = 0.0;
 				eeStiff = cartStiffness;
 
-				// Synchronize Cartesian Forces/Torques
+                ///-- Synchronize Cartesian Forces/Torques --///
 				des_ee_ft.Resize(6); des_ee_ft.Zero();
 				des_ee_ft = ((LWRRobot*)(mRobot))->GetEstimatedExternalCartForces();
 				((LWRRobot*)(mRobot))->SetEstimatedExternalCartForces(des_ee_ft);
@@ -312,13 +319,13 @@ RobotInterface::Status RobotStateSubscriber::RobotUpdateCore(){
 				GetConsole()->Print("Sent Sync cart Command");
 				std::ostringstream ss;
 				ss << des_ee_pos[0] << " " << des_ee_pos[1] << " " <<  des_ee_pos[2];
-				std::string msg(ss.str());
-				GetConsole()->Print(msg);
-				GetConsole()->Print("RobotUpdateCore Cart () w/ bSync");
 			}
 			bSync = false;
 			return STATUS_OK;
 		}
+
+
+        ///----Integrate desire joint velocities to convert them to Joint Positions----///
 		if(init_mode == INTERFACE_VELOCITY && bControl==1) {
 			for(int i=0; i<jointPositions.Size(); ++i) {
 				if((jointPositions[i] >= jointMax[i] && jointVelocities[i] >0) ||
@@ -328,40 +335,46 @@ RobotInterface::Status RobotStateSubscriber::RobotUpdateCore(){
 					jointPositions[i] += jointVelocities[i]*((LWRRobot*)mRobot)->GetSamplingTime();
 				}
 			}
-			//GetConsole()->Print("RobotUpdateCore () inside Interface Velocity");
+
 		}
 
-		///----Filter----///
+        ///----Apply filyer to Joint Positions----///
 		if(bFilter && bControl==1)
 		{
-			//			jointPositions.Print("JP");
 			filter->SetTarget(jointPositions);
 			filter->Update(((LWRRobot*)mRobot)->GetSamplingTime());
 			filter->GetState(filtered_joints);
-			//			filtered_joints.Print("F");
-			//GetConsole()->Print("RobotUpdateCore () inside bFilter");
 		}
 		else
 		{
 			if (bControl==1){
 				for(int i=0;i<ndof;i++)
-								filtered_joints[i] = jointPositions[i];
-							//GetConsole()->Print("RobotUpdateCore () not bFilter");
+                    filtered_joints[i] = jointPositions[i];
+
 			}
 		}
 
-		//----Depending on the type of control (bControl=1 is Joint Impedance Control / bControl=2 is Cartesian Impedance Control) do the following:
+        ///----Depending on the type of control (bControl=1 is Joint Impedance Control / bControl=2 is Cartesian Impedance Control) do the following: --//
 		if(bControl==1) {
+
+            ///-- Send Joint Positions Command to Robot --//
 			for(int i=0;i<ndof;i++)
 				cmd_positions[joint_map[i]] = filtered_joints[i];
 			actuators.SetJointPositions(cmd_positions);
 			actuators.WriteActuators();
 
-			std::ostringstream ssj;
-			ssj <<"Joint Commands: " <<cmd_positions[0] << " " << cmd_positions[1] << " " <<  cmd_positions[2] << "  "<< cmd_positions[3] << " " << cmd_positions[4] << " " <<  cmd_positions[5] << " ...";
-			std::string msgj(ssj.str());
-			//GetConsole()->Print(msgj);
-			//GetConsole()->Print("RobotUpdateCore () sending joint commands");
+            ///-- Send Joint Stiffness Command to Robot --//
+            cmd_stiffness.Resize(jointStiffness.Size());
+            for(int i=0;i<jointStiffness.Size();i++)
+                cmd_stiffness[i] = jointStiffness[i];
+            ((LWRRobot*)mRobot)->SetJointStiffness(cmd_stiffness);
+
+            ///-- Debug Prints fo Stiffness values --//
+            std::ostringstream ss_stiff;
+            ss_stiff <<"Stiffness Commands: " <<cmd_stiffness[0] << " " << cmd_stiffness[1] << " " <<  cmd_stiffness[2] << "  "<< cmd_stiffness[3] << " " << cmd_stiffness[4] << " " <<  cmd_stiffness[5] << " " << cmd_stiffness[6];
+            std::string msg_stiff(ss_stiff.str());
+            GetConsole()->Print(msg_stiff);
+
 		}
 		if(bControl==2){
 			((LWRRobot*)(mRobot))->SetControlMode(Robot::CTRLMODE_CARTIMPEDANCE);
@@ -371,7 +384,7 @@ RobotInterface::Status RobotStateSubscriber::RobotUpdateCore(){
 			double rot_stiff = eeStiff(3) + eeStiff(4) + eeStiff(5);
 
 			if (trans_stiff + rot_stiff == 0){
-				//--- Synchronize Cartesian Stiffness ---//
+                ///--- Synchronize Cartesian Stiffness ---//
 				des_ee_stiff = eeStiff;
 				((LWRRobot*)(mRobot))->SetCartStiffness(des_ee_stiff);
 
@@ -381,11 +394,11 @@ RobotInterface::Status RobotStateSubscriber::RobotUpdateCore(){
 			}
 			else
 			{
-				//--- Synchronize Cartesian Forces/Torques ---//
+                ///--- Synchronize Cartesian Forces/Torques ---//
 				des_ee_ft = eeFT;
 				((LWRRobot*)(mRobot))->SetCartForce(des_ee_ft);
 
-				//--- Synchronize Cartesian Position ---//
+                ///--- Synchronize Cartesian Position ---//
 				Vector3 currpos;Matrix3 currorient;
 				((LWRRobot*)mRobot)->GetMeasuredCartPose(currpos, currorient);
 				des_ee_pos = eePos;
@@ -395,11 +408,11 @@ RobotInterface::Status RobotStateSubscriber::RobotUpdateCore(){
 				std::string msg(sss.str());
 				GetConsole()->Print(msg);
 
-				// My own interpolator
+                ///--- My own interpolator --//
 				slerp_interpolator(currpos,currorient,des_ee_pos,des_ee_orient);
 				((LWRRobot*)(mRobot))->SetCartCommand(des_ee_pos, des_ee_orient);
 
-				//--- Synchronize Cartesian Stiffness ---//
+                ///--- Synchronize Cartesian Stiffness ---//
 				des_ee_stiff = eeStiff;
 				((LWRRobot*)(mRobot))->SetCartStiffness(des_ee_stiff);
 			}
@@ -435,7 +448,7 @@ void RobotStateSubscriber::slerp_interpolator(Vector3 currPos, Matrix3 currOrien
 
 	Vector3 tmpPos; Matrix3 tmpOrient;
 
-	// SLERP INTERPOLATOR for Position
+    ///-- SLERP INTERPOLATOR for Position --//
 	// General formula: slerp(p0,p1,t) = (1-t)*p0 + p1
 
     // Adapt interpolation parameter
@@ -552,15 +565,15 @@ int RobotStateSubscriber::RespondToConsoleCommand(const string cmd, const vector
 	return 0;
 }
 
+///-- Callback for the desired joint state for standard type (JointState)--//
 void RobotStateSubscriber::jointStateCallback(const sensor_msgs::JointState::ConstPtr &msg)
 {
-
+    ///--- Set desired joint velocities or positions ---//
 	if(init_mode == INTERFACE_VELOCITY) {
 		if(msg->velocity.size() != ndof) {
 			cout<<"Size mismatch in velocity!"<<endl;
 			return;
 		}
-
 
 		double d = ((LWRRobot*)mRobot)->GetSamplingTime();
 		for(int i=0;i<ndof;i++){
@@ -583,7 +596,45 @@ void RobotStateSubscriber::jointStateCallback(const sensor_msgs::JointState::Con
 }
 
 
-// Callback for the desired cartesian pose
+///-- Callback for the desired joint state for custom type (JointStateImpedance)--//
+void RobotStateSubscriber::jointStateImpedanceCallback(const kuka_fri_bridge::JointStateImpedance::ConstPtr &msg)
+{
+
+
+    GetConsole()->Print("Recieved Joint State Impedance Command");
+    ///--- Set desired joint velocities or positions ---//
+    if(init_mode == INTERFACE_VELOCITY) {
+        if(msg->velocity.size() != ndof) {
+            cout<<"Size mismatch in velocity!"<<endl;
+            return;
+        }
+
+        double d = ((LWRRobot*)mRobot)->GetSamplingTime();
+        for(int i=0;i<ndof;i++){
+            jointVelocities(i) = msg->velocity[i];
+        }
+
+    } else {
+        if (bControl==1){
+            if(msg->position.size() != ndof) {
+                cout<<"Size mismatch in position!"<<endl;
+                return;
+            }
+            for(int i=0;i<ndof;i++){
+                jointPositions(i) = msg->position[i];
+            }
+
+        }
+    }
+
+    ///--- Set joint stiffness ---//
+    for(int i=0;i<ndof;i++)
+        jointStiffness(i) = msg->stiffness[i];
+
+}
+
+
+///-- Callback for the desired cartesian pose --//
 void RobotStateSubscriber::cartStateCallback(const geometry_msgs::PoseStampedConstPtr& msg) {
 	const geometry_msgs::PoseStamped* data = msg.get();
 	//Setting desired position
@@ -603,7 +654,7 @@ void RobotStateSubscriber::cartStateCallback(const geometry_msgs::PoseStampedCon
 }
 
 
-// Callback for the desired end effector force/torque
+///--- Callback for the desired end effector force/torque ---///
 void RobotStateSubscriber::ftStateCallback(const geometry_msgs::WrenchStampedConstPtr& msg) {
 	const geometry_msgs::WrenchStamped* data = msg.get();
 	eeFT[0] = data->wrench.force.x;
@@ -614,7 +665,7 @@ void RobotStateSubscriber::ftStateCallback(const geometry_msgs::WrenchStampedCon
 	eeFT[4] = data->wrench.torque.y;
 	eeFT[5] = data->wrench.torque.z;
 
-	//--- Interpolate Forces ---//
+    ///--- Interpolate Forces ---//
 //	double curr_force = vCrtEEForce(2);
 //	Vector vCrtEEForce; vCrtEEForce.Resize(6); vCrtEEForce.Zero();
 //	vCrtEEForce = ((LWRRobot*)(mRobot))->GetEstimatedExternalCartForces();
@@ -636,16 +687,12 @@ void RobotStateSubscriber::ftStateCallback(const geometry_msgs::WrenchStampedCon
 }
 
 
-void RobotStateSubscriber::chatterCallback(const std_msgs::String::ConstPtr& msg)
-{
-//  ROS_INFO("I heard: [%s]", msg->data.c_str());
-
-
+void RobotStateSubscriber::chatterCallback(const std_msgs::String::ConstPtr& msg){
 			GetConsole()->Print(msg->data);
 }
 
 
-// Callback for the desired cartesian stiffness.
+///--- Callback for the desired cartesian stiffness. --///
 void RobotStateSubscriber::stiffStateCallback(const geometry_msgs::TwistStampedConstPtr& msg) {
 	const geometry_msgs::TwistStamped* data = msg.get();
 	eeStiff[0] = data->twist.linear.x;
@@ -658,7 +705,7 @@ void RobotStateSubscriber::stiffStateCallback(const geometry_msgs::TwistStampedC
 }
 
 
-bool RobotStateSubscriber::serviceCallback(rtk_mirror::StringService::Request& request,rtk_mirror::StringService::Response& response){
+bool RobotStateSubscriber::serviceCallback(kuka_fri_bridge::StringService::Request& request,kuka_fri_bridge::StringService::Response& response){
 	std::string command = request.str;
 	if(command == "grav"){
 		if(bGrav)

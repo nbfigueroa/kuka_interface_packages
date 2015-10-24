@@ -23,6 +23,7 @@
 #include "ros/ros.h"
 //#include "rosrt/rosrt.h"
 #include "sensor_msgs/JointState.h"
+#include "kuka_fri_bridge/JointStateImpedance.h"
 #include "geometry_msgs/PoseStamped.h"
 #include "geometry_msgs/TwistStamped.h"
 #include "geometry_msgs/WrenchStamped.h"
@@ -49,6 +50,7 @@ class RobotStatePublisher : public RobotInterface
     DigitalFilter velocityFilter;
 
     ros::Publisher jointStatePublisher;
+    ros::Publisher jointStateImpedancePublisher;
     ros::Publisher posePublisher;
     ros::Publisher velocityPublisher;
     ros::Publisher filteredVelocityPublisher;
@@ -59,6 +61,7 @@ class RobotStatePublisher : public RobotInterface
     //    rosrt::Publisher<std_msgs::Empty> * ratePublisher;
     std_msgs::EmptyPtr emptyMsg;
     sensor_msgs::JointState jointStateMsg;
+    kuka_fri_bridge::JointStateImpedance jointStateImpedanceMsg;
     geometry_msgs::PoseStamped poseStampedMsg;
     geometry_msgs::TwistStamped twistStampedMsg;
     geometry_msgs::WrenchStamped ftMsg;

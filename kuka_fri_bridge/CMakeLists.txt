@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 2.8.3)
-project(rtk_mirror)
+project(kuka_fri_bridge)
 
 set(RobotModules RobotStatePublisher RobotStateSubscriber)
 ## Find catkin macros and libraries
@@ -41,11 +41,10 @@ find_package(catkin REQUIRED mathlib std_tools robotlib kuka_robot_model motion_
 ##   * add every package in MSG_DEP_SET to generate_messages(DEPENDENCIES ...)
 
 ## Generate messages in the 'msg' folder
-# add_message_files(
-#   FILES
-#   Message1.msg
-#   Message2.msg
-# )
+ add_message_files(
+   FILES
+   JointStateImpedance.msg
+ )
 
 ## Generate services in the 'srv' folder
  add_service_files(
@@ -63,7 +62,8 @@ find_package(catkin REQUIRED mathlib std_tools robotlib kuka_robot_model motion_
 ## Generate added messages and services with any dependencies listed here
  generate_messages(
    DEPENDENCIES
-   std_msgs geometry_msgs  # Or other packages containing msgs
+   std_msgs 
+   geometry_msgs  
  )
 
 ###################################

@@ -1,5 +1,5 @@
 <Config>
-<Packages>   kuka_robot_model  rtk_mirror  </Packages>
+<Packages>   kuka_robot_model  kuka_fri_bridge  </Packages>
     <World> Examples/BasicWorld
 
      </World>

@@ -1,6 +1,6 @@
 <?xml version="1.0"?>
 <package>
-  <name>rtk_mirror</name>
+  <name>kuka_fri_bridge</name>
   <version>0.0.0</version>
   <description>The rtk_mirror package</description>
 
