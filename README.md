@@ -13,6 +13,8 @@ This package offer a bridge control interface for the KUKA robot using robot-too
 It has two types of control modes.
 
   1. Joint Impedance Control Mode:
+![alt tag](https://cloud.githubusercontent.com/assets/761512/10713622/224bc630-7ac1-11e5-96cd-ef2b83aa87cb.png)
+  
   2. Cartesian Impedance Control Mode:
 ![alt tag](https://cloud.githubusercontent.com/assets/761512/10713605/6167fbfa-7ac0-11e5-95c9-523ffbbf7db5.png)
 
