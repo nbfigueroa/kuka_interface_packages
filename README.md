@@ -12,7 +12,7 @@ This package offers a bridge control interface for the KUKA robot using robot-to
 
 ####1. Joint Impedance Control Mode:
 
-The joint impedance control mode has two control interfaces position and velocity. Following is a diagram of the control flow. From your own node you have to publish **joint commands** which can be position+stiffness or velocity+stiffness. The bridge will then publish the current **joint state** to the standard ```sensor_msgs/JointState``` message with topic name ```/joint_states``` which includes positions/velocities/effort. 
+The joint impedance control mode has two control interfaces: ***position*** and ***velocity***. Following is a diagram of the control flow. From your own node you have to publish **joint commands** which can be position+stiffness or velocity+stiffness. The bridge will then publish the current **joint state** to the standard ```sensor_msgs/JointState``` message with topic name ```/joint_states``` which includes positions/velocities/effort. 
 
 ![alt tag](https://cloud.githubusercontent.com/assets/761512/10713622/224bc630-7ac1-11e5-96cd-ef2b83aa87cb.png)
 
@@ -23,14 +23,14 @@ Similarly, there are two message options for the joint commands:
   2. A ```kuka_fri_bridge/JointStateImpedance``` message type which has to be published to ```/KUKA/joint_imp_cmd```. With this message you **have to** set position/velocity and stiffness. 
   
 #### Set-up:
-To configure the bridge for either position or velocity control interface, you have to modify the one line in the ```/kuka_fri_bridge/config/KUKABridge.xml```:
+To configure the bridge for either position or velocity control interface, you have to modify one line in the ```/kuka_fri_bridge/config/KUKABridge.xml```:
 ```
 <Options>
             <CtrlInterface> velocity </CtrlInterface>
 </Options>
 ```
 
-Once this is donw, run the script in the teach pad correctly until you get the message ```FRI Succesfully opened```, then you must press the ```PageDown`` key twice and afterwords type:
+Once this is done, run the script in the teach pad correctly until you get the message ```FRI Succesfully opened```, then you must press the ```PageDown`` key twice and afterwords type:
 ```
 KUKA> control 1
 ```
