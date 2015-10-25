@@ -18,11 +18,13 @@ The joint impedance control mode has two control interfaces position and velocit
             <CtrlInterface> velocity </CtrlInterface>
 </Options>
 ```
-Following is a diagram of the control flow. From your own node you have to publish **joint commands** which can be position+stiffness or velocity+stiffness. The bridge will then publish the current **joint state** to the standard ```sensor_msgs/JointState``` message with topic name ```/joint_states``` which includes positions/velocities/effort. If you want to read the joint stiffness as well, you can subscribed to the topic named ```/joint_imp_states```, which is of our custom type ```kuka_fri_bridge/JointStateImpedance``` and includes all the measurements from former message + joint stiffnesses.
+Following is a diagram of the control flow. From your own node you have to publish **joint commands** which can be position+stiffness or velocity+stiffness. The bridge will then publish the current **joint state** to the standard ```sensor_msgs/JointState``` message with topic name ```/joint_states``` which includes positions/velocities/effort. 
 
 ![alt tag](https://cloud.githubusercontent.com/assets/761512/10713622/224bc630-7ac1-11e5-96cd-ef2b83aa87cb.png)
 
-There are two message options for the joint commands in this control mode:  
+If you want to read the joint stiffness as well, you can subscribed to the topic named ```/joint_imp_states```, which is of our custom type ```kuka_fri_bridge/JointStateImpedance``` and includes all the measurements from former message + joint stiffnesses.
+
+Similarly, there are two message options for the joint commands:  
   1. A ```sensor_msgs/JointState``` message type which has to be published  to ```/KUKA/joint_cmd```. With this message you can only set position/velcoties. The stiffness will be set with the default values (500 Nm/rad).
   2. A ```kuka_fri_bridge/JointStateImpedance``` message type which has to be published to ```/KUKA/joint_imp_cmd```. With this message you **have to** set position/velocity and stiffness. 
   
