@@ -63,3 +63,4 @@ KUKA> control 2
 ```
 in the ```kuka_fri_bridge``` terminal.  The bridge will now be waiting for the script to run on the teachpad. Keep clicking on the green button until ```CARTESIANIMPEDANCE``` control mode is set.
 
+***NOTE:*** If you decide to use this control mode, the robot might do some unexpected behaviors since the IK/ID is being computed in the KUKA control box. One way to be safe is to check your next cartesian command with an IK/ID solver OR if you wish to trust the robot blindly it's on you, just try not to break it or any walls.
