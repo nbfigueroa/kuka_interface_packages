@@ -48,7 +48,7 @@ This control mode has only 1 interface posibility and it is by sending pose (pos
   ```
 ![alt tag](https://cloud.githubusercontent.com/assets/761512/10713605/6167fbfa-7ac0-11e5-95c9-523ffbbf7db5.png)
 
-As seen in the diagram, besides the joint state message described above, the bridge will also publish cartesian state messages, for those who do not want to bother with IK/ID and trust the robot controller and their trajectories blindly, These messages are the following:
+As seen in the diagram, besides the joint state message described above, the bridge will also publish cartesian state messages:
   ```
   /KUKA/Pose
   /KUKA/FT
