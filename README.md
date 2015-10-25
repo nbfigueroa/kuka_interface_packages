@@ -12,9 +12,11 @@ This package offers a bridge control interface for the KUKA robot using robot-to
 
 ####1. Joint Impedance Control Mode:
 
-The joint impedance control mode has two control interfaces: ***position*** and ***velocity***. Following is a diagram of the control flow. From your own node you have to publish **joint commands** which can be position+stiffness or velocity+stiffness. The bridge will then publish the current **joint state** to the standard ```sensor_msgs/JointState``` message with topic name ```/joint_states``` which includes positions/velocities/effort. 
+The joint impedance control mode has two control interfaces: ***position*** and ***velocity***. Following is a diagram of the control flow. 
 
 ![alt tag](https://cloud.githubusercontent.com/assets/761512/10713622/224bc630-7ac1-11e5-96cd-ef2b83aa87cb.png)
+
+From your own node you have to publish **joint commands** which can be position+stiffness or velocity+stiffness. The bridge will then publish the current **joint state** to the standard ```sensor_msgs/JointState``` message with topic name ```/joint_states``` which includes positions/velocities/effort. 
 
 If you want to read the joint stiffness as well, you can subscribed to the topic named ```/joint_imp_states```, which is of our custom type ```kuka_fri_bridge/JointStateImpedance``` and includes all the measurements from former message + joint stiffnesses.
 
@@ -46,7 +48,7 @@ This control mode has only 1 interface posibility and it is by sending pose (pos
   ```
 ![alt tag](https://cloud.githubusercontent.com/assets/761512/10713605/6167fbfa-7ac0-11e5-95c9-523ffbbf7db5.png)
 
-Besides, the joint state message described above, the bridge will also publish cartesian state messages, for those who do not want to bother with IK/ID and trust the robot controller and their trajectories blindly, These messages are the following:
+As seen in the diagram, besides the joint state message described above, the bridge will also publish cartesian state messages, for those who do not want to bother with IK/ID and trust the robot controller and their trajectories blindly, These messages are the following:
   ```
   /KUKA/Pose
   /KUKA/FT
