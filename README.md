@@ -28,6 +28,13 @@ Similarly, there are two message options for the joint commands:
   1. A ```sensor_msgs/JointState``` message type which has to be published  to ```/KUKA/joint_cmd```. With this message you can only set position/velcoties. The stiffness will be set with the default values (500 Nm/rad).
   2. A ```kuka_fri_bridge/JointStateImpedance``` message type which has to be published to ```/KUKA/joint_imp_cmd```. With this message you **have to** set position/velocity and stiffness. 
   
+
+In order to set this control mode, you must type:
+```
+control 1
+```
+in the kuka_fri_bridge terminal and then run the script on the teachpad until JOINTIMPEDANCE control mode is set.
+
 ####2. Cartesian Impedance Control Mode: 
 
 This control mode has only 1 interface posibility and it is by sending pose (position/orientation), forces/torques and stiffness values for the end-effector, these are expected to be published in the following topics:
@@ -45,3 +52,10 @@ Besides, the joint state message described above, the bridge will also publish c
   /KUKA/STiff
   ```
 The names are self-explanatory.
+
+In order to set this control mode, you must type:
+```
+control 2
+```
+in the kuka_fri_bridge terminal and then run the script on the teachpad until JOINTIMPEDANCE control mode is set.
+
