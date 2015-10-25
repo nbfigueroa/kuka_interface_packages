@@ -12,20 +12,27 @@ This package offers a bridge control interface for the KUKA robot using robot-to
 
 It has two types of control modes.
 
-  **1. Joint Impedance Control Mode:** The joint impedance control mode has two control interfaces position and velocity. This has to be set in ```/kuka_fri_bridge/config/KUKABridge.xml``` in the following lines of text:
-  ```
-  <Options>
+###1. Joint Impedance Control Mode:
+
+The joint impedance control mode has two control interfaces position and velocity. This has to be set in ```/kuka_fri_bridge/config/KUKABridge.xml``` in the following lines of text:
+```
+<Options>
             <CtrlInterface> velocity </CtrlInterface>
-  </Options>
-  ```
-  Following is diagram of the control flow. From your own node you have to publish ***joint commands*** which can be position+stiffness or velocity+stiffness. The bridge will then publish the current ***joint state*** to the standard ```sensor_msgs/JointState``` message with topic name: ```/joint_states```.
+</Options>
+```
+Following is diagram of the control flow. From your own node you have to publish **joint commands** which can be position+stiffness or velocity+stiffness. The bridge will then publish the current **joint state** to the standard ```sensor_msgs/JointState``` message with topic name: ```/joint_states```.
+
 ![alt tag](https://cloud.githubusercontent.com/assets/761512/10713622/224bc630-7ac1-11e5-96cd-ef2b83aa87cb.png)
-    If you only want to set either position/velocity but not stiffness you can use the standard   ```sensor_msgs/JointState``` message and publish to ```/KUKA/joint_cmd```.
-    If you want to modulate the stiffness then you should use our custom messages ```kuka_fri_bridge/JointStateImpedance``` and publish to ```/KUKA/joint_imp_cmd```.  
+
+There are two message options for controlling the robot in this control mode:  
+  ```sensor_msgs/JointState``` message and publish to ```/KUKA/joint_cmd```.
+  ```kuka_fri_bridge/JointStateImpedance``` and publish to ```/KUKA/joint_imp_cmd```.  
   
 
   
-  **2. Cartesian Impedance Control Mode:** This control mode has only 1 interface posibility and it is by sending pose (position/orientation), forces/torques and stiffness values for the end-effector, these are expected to be published in the following topics:
+###2. Cartesian Impedance Control Mode: 
+
+This control mode has only 1 interface posibility and it is by sending pose (position/orientation), forces/torques and stiffness values for the end-effector, these are expected to be published in the following topics:
   ```
   /KUKA/des_ee_pose
   /KUKA/des_ee_ft
