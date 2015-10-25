@@ -113,11 +113,20 @@ RobotInterface::Status RobotStatePublisher::RobotInit(){
     for(int i=0;i<ndof;i++)
     	joint_map[i] = mRobot->GetDOFIndex("DOF_" + boost::lexical_cast<string>(i));
 
-
+    ///--- Initializing Joint State Message ---///
     jointStateMsg.position.resize(ndof);
     jointStateMsg.velocity.resize(ndof);
     jointStateMsg.effort.resize(ndof);
     jointStateMsg.name.resize(ndof);
+
+    ///--- Initializing Joint State Impedance Message ---///
+    jointStateImpedanceMsg.position.resize(ndof);
+    jointStateImpedanceMsg.velocity.resize(ndof);
+    jointStateImpedanceMsg.effort.resize(ndof);
+    jointStateImpedanceMsg.stiffness.resize(ndof);
+    jointStateImpedanceMsg.name.resize(ndof);
+
+
     char buf[255];
     pXmlTree options = GetOptionTree();
     string which_arm;
@@ -131,6 +140,7 @@ RobotInterface::Status RobotStatePublisher::RobotInit(){
     for(int i=0; i<ndof; ++i) {
     	sprintf(buf, "%s_arm_%d_joint",which_arm.c_str(), i);
     	jointStateMsg.name[i] = buf;
+        jointStateImpedanceMsg.name[i] = buf;
     }
 
 
@@ -182,10 +192,25 @@ RobotInterface::Status RobotStatePublisher::RobotUpdateCore(){
      }
 
      Eigen::Quaternion<double> rot_quat(rot_Eigen);
+
+     Vector curr_stiff; curr_stiff.Resize(ndof);
+     curr_stiff = ((LWRRobot*)mRobot)->GetJointStiffness();
+
      for(int i=0;i<ndof;i++){
+         ///--- Setting Positions ---//
          jointStateMsg.position[i] = mSensorsGroup.GetJointAngles()(joint_map[i]);
+         jointStateImpedanceMsg.position[i] = jointStateMsg.position[i];
+
+         ///--- Setting Velocities ---//
          jointStateMsg.velocity[i] = mSensorsGroup.GetJointVelocities()(joint_map[i]);
+         jointStateImpedanceMsg.velocity[i] = jointStateMsg.velocity[i];
+
+         ///--- Setting Efforts ---//
          jointStateMsg.effort[i] = mSensorsGroup.GetJointTorques()(joint_map[i]);
+         jointStateImpedanceMsg.effort[i] = jointStateMsg.effort[i];
+
+         ///--- Setting Stiffness ---//
+         jointStateImpedanceMsg.stiffness[i] = curr_stiff[i];
      }
 
      jointStateMsg.header.stamp = ros::Time::now();
@@ -204,7 +229,7 @@ RobotInterface::Status RobotStatePublisher::RobotUpdateCore(){
      jointStatePublisher.publish(jointStateMsg);
 
      ///-- Publish Joint State Impedance Msg --///
-     jointStatePublisher.publish(jointStateImpedanceMsg);
+     jointStateImpedancePublisher.publish(jointStateImpedanceMsg);
 
      ///-- Publish CartPose Msg --///
      posePublisher.publish(poseStampedMsg);

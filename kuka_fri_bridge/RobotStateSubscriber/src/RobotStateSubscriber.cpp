@@ -71,10 +71,6 @@ RobotInterface::Status RobotStateSubscriber::RobotInit(){
 
 	nh = mRobot->InitializeROS(nodename);
 
-	string topicName = mRobot->GetName();
-	//topicName += "/joint_cmd";
-	//topicName = "/KUKA/joint_cmd";
-	topicName += "/joint_cmd";
          ndof = 0;
 	while(true)
 	{
@@ -97,18 +93,23 @@ RobotInterface::Status RobotStateSubscriber::RobotInit(){
 	jointVelocities.Resize(ndof);
 	prevJointVelocities.Resize(ndof);
 
+    nEndEffectorId = mRobot->GetLinkIndex("TOOL");
+        cout << "The end effector id is " << nEndEffectorId << endl;
+        if (nEndEffectorId == -1)
+            GetConsole()->Print("ERROR: End effector not found");
 
+
+
+    string topicName = mRobot->GetName();
+    topicName += "/joint_cmd";
 	jointStateSubscriber = nh->subscribe("/KUKA/joint_cmd",100,&RobotStateSubscriber::jointStateCallback,this);
+
+    topicName = mRobot->GetName();
+    topicName += "/joint_imp_cmd";
     jointStateImpedanceSubscriber = nh->subscribe("/KUKA/joint_imp_cmd",100,&RobotStateSubscriber::jointStateImpedanceCallback,this);
 
     ///-- Test Subscriber, to check that msgs are being sent! ---///
     chatterSub = nh->subscribe("chatter", 1000,&RobotStateSubscriber::chatterCallback, this);
-
-
-	nEndEffectorId = mRobot->GetLinkIndex("TOOL");
-		cout << "The end effector id is " << nEndEffectorId << endl;
-		if (nEndEffectorId == -1)
-			GetConsole()->Print("ERROR: End effector not found");
 
     ///--- New Subscribers to have Cartesian Impedance control ---//
 	topicName = mRobot->GetName();
@@ -124,7 +125,6 @@ RobotInterface::Status RobotStateSubscriber::RobotInit(){
 	topicName += "/des_ee_stiff";
 	des_ee_stiff(6);
 	stiffStateSubscriber = nh->subscribe(topicName,1,&RobotStateSubscriber::stiffStateCallback,this);
-
 
 	mService = nh->advertiseService("StringService",&RobotStateSubscriber::serviceCallback,this);
 
@@ -325,7 +325,7 @@ RobotInterface::Status RobotStateSubscriber::RobotUpdateCore(){
 		}
 
 
-        ///----Integrate desire joint velocities to convert them to Joint Positions----///
+        ///----Integrate desired joint velocities to convert them to Joint Positions----///
 		if(init_mode == INTERFACE_VELOCITY && bControl==1) {
 			for(int i=0; i<jointPositions.Size(); ++i) {
 				if((jointPositions[i] >= jointMax[i] && jointVelocities[i] >0) ||
@@ -338,7 +338,7 @@ RobotInterface::Status RobotStateSubscriber::RobotUpdateCore(){
 
 		}
 
-        ///----Apply filyer to Joint Positions----///
+        ///----Apply filter to Joint Positions----///
 		if(bFilter && bControl==1)
 		{
 			filter->SetTarget(jointPositions);
@@ -365,8 +365,22 @@ RobotInterface::Status RobotStateSubscriber::RobotUpdateCore(){
 
             ///-- Send Joint Stiffness Command to Robot --//
             cmd_stiffness.Resize(jointStiffness.Size());
-            for(int i=0;i<jointStiffness.Size();i++)
-                cmd_stiffness[i] = jointStiffness[i];
+            Vector curr_stiffness; curr_stiffness.Resize(ndof);
+            curr_stiffness = ((LWRRobot*)mRobot)->GetJointStiffness();
+            float curr_stiff(0.0), des_stiff(0.0), interp_stiff(0.0), interp_param(0.01);
+            for(int i=0;i<jointStiffness.Size();i++){
+                // Interpolate Joint Stiffness so it changes smoothly and we avoid lock
+                curr_stiff = curr_stiffness[i];
+                des_stiff = jointStiffness[i];
+
+                if (curr_stiff == 0 && des_stiff > 10)
+                        des_stiff  = 10.0;
+
+                interp_stiff = (1-interp_param)*curr_stiff + interp_param*des_stiff;
+
+                cmd_stiffness[i] = interp_stiff;
+            }
+
             ((LWRRobot*)mRobot)->SetJointStiffness(cmd_stiffness);
 
             ///-- Debug Prints fo Stiffness values --//
@@ -449,7 +463,7 @@ void RobotStateSubscriber::slerp_interpolator(Vector3 currPos, Matrix3 currOrien
 	Vector3 tmpPos; Matrix3 tmpOrient;
 
     ///-- SLERP INTERPOLATOR for Position --//
-	// General formula: slerp(p0,p1,t) = (1-t)*p0 + p1
+    // General formula: slerp(p0,p1,t) = (1-t)*p0 + t*p1
 
     // Adapt interpolation parameter
 	double inter_param_p = 0.5;
@@ -600,8 +614,6 @@ void RobotStateSubscriber::jointStateCallback(const sensor_msgs::JointState::Con
 void RobotStateSubscriber::jointStateImpedanceCallback(const kuka_fri_bridge::JointStateImpedance::ConstPtr &msg)
 {
 
-
-    GetConsole()->Print("Recieved Joint State Impedance Command");
     ///--- Set desired joint velocities or positions ---//
     if(init_mode == INTERFACE_VELOCITY) {
         if(msg->velocity.size() != ndof) {
