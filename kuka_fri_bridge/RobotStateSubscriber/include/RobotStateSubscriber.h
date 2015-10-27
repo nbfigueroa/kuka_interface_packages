@@ -30,6 +30,7 @@
 #include "CDDynamics.h"
 #include "tf/LinearMath/Quaternion.h"
 #include <tf/tf.h>
+#include <math.h>
 
 
 // Translational Stiffness values
@@ -60,9 +61,11 @@ class RobotStateSubscriber : public RobotInterface
     RevoluteJointSensorGroup sensors;
     Vector jointPositions, jointVelocities, jointStiffness, prevJointVelocities, jointMax, jointMin;
     Vector cmd_positions, cmd_velocities, cmd_stiffness;
-    Vector  des_ee_ft, des_ee_stiff;
+    Vector  des_ee_ft, des_ee_stiff, curr_stiffness, curr_stiffness_tmp;
     Vector3 des_ee_pos, prev_ee_pos;
     Matrix3 des_ee_orient, prev_ee_orient;
+    bool bFirstInt;
+
     Vector filtered_joints;
     unsigned int ndof;
     IndicesVector joint_map;
