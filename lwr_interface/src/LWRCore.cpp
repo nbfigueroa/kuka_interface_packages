@@ -349,13 +349,13 @@ void LWRCore::ControlUpdate(){
 void LWRCore::SetCommandedJPos(float* JP_commanded){
 	float oldJP_commanded[LBR_MNJ];
 	mFRI->GetCommandedJointPositions(oldJP_commanded);
-	//float diff;
-//	for(int i=0;i<LBR_MNJ;i++){
-//		diff = fabs(JP_commanded[i] - oldJP_commanded[i]);
-//		if(diff < 0.0001){
-//			JP_commanded[i] = oldJP_commanded[i];
-//		}
-//	}
+    float diff;
+    for(int i=0;i<LBR_MNJ;i++){
+        diff = fabs(JP_commanded[i] - oldJP_commanded[i]);
+        if(diff < 0.0001){
+            JP_commanded[i] = oldJP_commanded[i];
+        }
+    }
 	mFRI->SetCommandedJointPositions(JP_commanded);
 
 }

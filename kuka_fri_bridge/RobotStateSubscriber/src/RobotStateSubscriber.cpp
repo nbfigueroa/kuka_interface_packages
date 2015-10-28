@@ -367,14 +367,30 @@ RobotInterface::Status RobotStateSubscriber::RobotUpdateCore(){
             ///-- Set Joint Stiffness Command --//
             curr_stiffness = ((LWRRobot*)mRobot)->GetJointStiffness();
             float curr_stiff(0.0), des_stiff(0.0), interp_stiff(0.0), stiff_diff(0.0);
-            float interp_param = ((LWRRobot*)mRobot)->GetSamplingTime();
-            float step_size = ((LWRRobot*)mRobot)->GetSamplingTime();
+            float interp_param = ((LWRRobot*)mRobot)->GetSamplingTime()*2;
             float safe_delta_stiff(10.0), delta_param(10.0);
 
 
+            // Checks for grav_comp and individual joint locks
+            float stiff_thres = 100.0;
+            int stiff_low = 0, stiff_lock = 0;
+            for(int i=0;i<ndof;i++){
+                // Check if commanded stiffness is lower than the gravcomp threshold
+                if(jointStiffness[i] < stiff_thres)
+                    stiff_low++;
+                // Check if commaned stiffness are higher than lock threshold
+                if(jointStiffness[i] > stiff_thres*2)
+                    stiff_lock++;
+            }
+
+            std::ostringstream ss_stiff_vals;
+            ss_stiff_vals <<"stiff low : " <<stiff_low << "  stiff_lock: " << stiff_lock;
+            std::string msg_ss_stiff_vals(ss_stiff_vals.str());
+            GetConsole()->Print(msg_ss_stiff_vals);
+
             for(int i=0;i<jointStiffness.Size();i++){
 
-                curr_stiff = curr_stiffness[i];          
+                curr_stiff = curr_stiffness[i];
                 des_stiff = jointStiffness[i];
                 stiff_diff = curr_stiff - des_stiff;
 
@@ -397,45 +413,40 @@ RobotInterface::Status RobotStateSubscriber::RobotUpdateCore(){
                 if (interp_stiff < 1e-3 && des_stiff == 0)
                     interp_stiff = 0;
 
-                cmd_stiffness[i] = interp_stiff;
+                cmd_stiffness(i) = interp_stiff;
+
             }
-
-
             // IF 0 Stiffness on all axis it means we want GRAVCOMP so only set stiffness and update current Pose (or set grav comp)
             // Otherwise send the desired commands accordingly
+
             float tot_stiff = 0.0;
-//            for(int i=0;i < ndof;i++)
             tot_stiff = cmd_stiffness[0] + cmd_stiffness[1] + cmd_stiffness[2] + cmd_stiffness[3] + cmd_stiffness[4] + cmd_stiffness[5] + cmd_stiffness[6];
 
-            std::ostringstream ss_tot;
-            ss_tot <<"total stiffness : " << tot_stiff ;
-            std::string msg_ss_tot(ss_tot.str());
-            GetConsole()->Print(msg_ss_tot);
-
-
-            if (tot_stiff == 0){
+              if (stiff_low > 1){
 
                 GetConsole()->Print("In  grav_comp");
-                ((LWRRobot*)mRobot)->SetControlMode(Robot::CTRLMODE_GRAVITYCOMPENSATION);
 
-//                ///-- Send Joint Stiffness Command to Robot --//
-//                ((LWRRobot*)mRobot)->SetJointStiffness(cmd_stiffness);
+                // If it's in gravcomp and we get a high value for 1 joint and 0 for other
+                if (stiff_low == 6  && stiff_lock == 1){
+                    GetConsole()->Print("Locking Joint in Gravcomp");
+                    cmd_stiffness = jointStiffness;
+                }
 
-//                ///-- Synchronize Joint Positions --//
-//                sensors.ReadSensors();
-//                cmd_positions = sensors.GetJointPositions();
-//                for(int i=0;i<ndof;i++)
-//                    jointPositions[i] = cmd_positions[joint_map[i]];
+                ///-- Send Joint Stiffness Command to Robot --//
+                ((LWRRobot*)mRobot)->SetJointStiffness(cmd_stiffness);
 
-//                filter->SetState(jointPositions);
-//                filter->SetTarget(jointPositions);
-//                filtered_joints.Resize(ndof);
-//                actuators.SetJointPositions(cmd_positions);
-//                actuators.WriteActuators();
+                ///-- Synchronize Joint Positions --//
+                sensors.ReadSensors();
+                cmd_positions = sensors.GetJointPositions();
+                for(int i=0;i<ndof;i++)
+                    jointPositions[i] = cmd_positions[joint_map[i]];
+                filter->SetState(jointPositions);
+                filter->SetTarget(jointPositions);
+                filtered_joints.Resize(ndof);
+                actuators.SetJointPositions(cmd_positions);
+                actuators.WriteActuators();
 
-//                ///--- Synchronize Cartesian Position ---///
-//                ((LWRRobot*)mRobot)->GetMeasuredCartPose(des_ee_pos, des_ee_orient);
-//                ((LWRRobot*)(mRobot))->SetCartCommand(des_ee_pos, des_ee_orient);
+//                ((LWRRobot*)mRobot)->SetControlMode(Robot::CTRLMODE_GRAVITYCOMPENSATION);
 
                 bGrav = true;
 
@@ -476,7 +487,6 @@ RobotInterface::Status RobotStateSubscriber::RobotUpdateCore(){
                 }
 
             }
-
 
 
             ///-- Debug Prints fo Stiffness values --//
