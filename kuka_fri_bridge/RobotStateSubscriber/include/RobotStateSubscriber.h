@@ -60,7 +60,7 @@ class RobotStateSubscriber : public RobotInterface
     RevoluteJointActuatorGroup actuators;
     RevoluteJointSensorGroup sensors;
     Vector jointPositions, jointVelocities, jointStiffness, prevJointVelocities, jointMax, jointMin;
-    Vector cmd_positions, cmd_velocities, cmd_stiffness;
+    Vector cmd_positions, cmd_velocities, cmd_stiffness, cmd_damping;
     Vector  des_ee_ft, des_ee_stiff, curr_stiffness, curr_stiffness_tmp;
     Vector3 des_ee_pos, prev_ee_pos;
     Matrix3 des_ee_orient, prev_ee_orient;

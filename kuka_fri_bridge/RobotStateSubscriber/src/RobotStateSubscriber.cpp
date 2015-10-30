@@ -152,6 +152,10 @@ RobotInterface::Status RobotStateSubscriber::RobotInit(){
     curr_stiffness.Resize(7); curr_stiffness.Zero();
     curr_stiffness_tmp.Resize(7); curr_stiffness_tmp.Zero();
 
+    cmd_stiffness.Resize(7); cmd_stiffness.Zero();
+    cmd_damping.Resize(7); cmd_damping.Zero();
+
+
 	// ===================================================
 	// ========  Initialize CDDynamics         ===========
 	// ===================================================
@@ -367,7 +371,7 @@ RobotInterface::Status RobotStateSubscriber::RobotUpdateCore(){
             ///-- Set Joint Stiffness Command --//
             curr_stiffness = ((LWRRobot*)mRobot)->GetJointStiffness();
             float curr_stiff(0.0), des_stiff(0.0), interp_stiff(0.0), stiff_diff(0.0);
-            float interp_param = ((LWRRobot*)mRobot)->GetSamplingTime()*2;
+            float interp_param = ((LWRRobot*)mRobot)->GetSamplingTime()*3;
             float safe_delta_stiff(10.0), delta_param(10.0);
 
 
@@ -419,36 +423,60 @@ RobotInterface::Status RobotStateSubscriber::RobotUpdateCore(){
             // IF 0 Stiffness on all axis it means we want GRAVCOMP so only set stiffness and update current Pose (or set grav comp)
             // Otherwise send the desired commands accordingly
 
-            float tot_stiff = 0.0;
-            tot_stiff = cmd_stiffness[0] + cmd_stiffness[1] + cmd_stiffness[2] + cmd_stiffness[3] + cmd_stiffness[4] + cmd_stiffness[5] + cmd_stiffness[6];
+            float tot_cmd_stiff = 0.0, tot_curr_stiff = 0.0;
 
-              if (stiff_low > 1){
-
-                GetConsole()->Print("In  grav_comp");
+            if (stiff_low > 1){
 
                 // If it's in gravcomp and we get a high value for 1 joint and 0 for other
-                if (stiff_low == 6  && stiff_lock == 1){
+                if ((stiff_low == 6  && stiff_lock == 1) || (stiff_low == 5  && stiff_lock == 2)){
                     GetConsole()->Print("Locking Joint in Gravcomp");
                     cmd_stiffness = jointStiffness;
+
+                    ((LWRRobot*)mRobot)->SetControlMode(Robot::CTRLMODE_JOINTIMPEDANCE);
+                    //-- Send Joint Stiffness Command to Robot --//
+                    ((LWRRobot*)mRobot)->SetJointStiffness(cmd_stiffness);
+
+                    ///-- Synchronize Joint Positions --//
+                    sensors.ReadSensors();
+                    cmd_positions = sensors.GetJointPositions();
+                    for(int i=0;i<ndof;i++)
+                        jointPositions[i] = cmd_positions[joint_map[i]];
+                    filter->SetState(jointPositions);
+                    filter->SetTarget(jointPositions);
+                    filtered_joints.Resize(ndof);
+                    actuators.SetJointPositions(cmd_positions);
+                    actuators.WriteActuators();
+
                 }
+                else
+                    GetConsole()->Print("Going to grav_comp");
 
-                ///-- Send Joint Stiffness Command to Robot --//
-                ((LWRRobot*)mRobot)->SetJointStiffness(cmd_stiffness);
 
-                ///-- Synchronize Joint Positions --//
-                sensors.ReadSensors();
-                cmd_positions = sensors.GetJointPositions();
-                for(int i=0;i<ndof;i++)
-                    jointPositions[i] = cmd_positions[joint_map[i]];
-                filter->SetState(jointPositions);
-                filter->SetTarget(jointPositions);
-                filtered_joints.Resize(ndof);
-                actuators.SetJointPositions(cmd_positions);
-                actuators.WriteActuators();
+                    ///-- Send Joint Stiffness Command to Robot --//
+                    ((LWRRobot*)mRobot)->SetJointStiffness(cmd_stiffness);
 
-//                ((LWRRobot*)mRobot)->SetControlMode(Robot::CTRLMODE_GRAVITYCOMPENSATION);
 
-                bGrav = true;
+                    ///-- Check stiffness, if it has reached the target, update joint positions
+                     tot_curr_stiff = curr_stiffness[0] + curr_stiffness[1] + curr_stiffness[2] + curr_stiffness[3] + curr_stiffness[4] + curr_stiffness[5] + curr_stiffness[6];
+                     tot_cmd_stiff = cmd_stiffness[0] + cmd_stiffness[1] + cmd_stiffness[2] + cmd_stiffness[3] + cmd_stiffness[4] + cmd_stiffness[5] + cmd_stiffness[6];
+
+
+                    if (abs(tot_curr_stiff-tot_cmd_stiff) < 1e-2){
+                        GetConsole()->Print("Reached Desired stiffness, set Joint Positions");
+
+                        ///-- Synchronize Joint Positions --///
+                        sensors.ReadSensors();
+                        cmd_positions = sensors.GetJointPositions();
+                        for(int i=0;i<ndof;i++)
+                            jointPositions[i] = cmd_positions[joint_map[i]];
+                        filter->SetState(jointPositions);
+                        filter->SetTarget(jointPositions);
+                        filtered_joints.Resize(ndof);
+                        actuators.SetJointPositions(cmd_positions);
+                        actuators.WriteActuators();
+                        bGrav = true;
+                    }
+
 
             }
 
@@ -482,8 +510,10 @@ RobotInterface::Status RobotStateSubscriber::RobotUpdateCore(){
                     actuators.SetJointPositions(cmd_positions);
                     actuators.WriteActuators();
 
+
                     ///-- Send Joint Stiffness Command to Robot --//
                     ((LWRRobot*)mRobot)->SetJointStiffness(cmd_stiffness);
+
                 }
 
             }
@@ -499,6 +529,11 @@ RobotInterface::Status RobotStateSubscriber::RobotUpdateCore(){
             ss_stiff_0 <<"Desired Stiffness: " <<jointStiffness[0] << " " << jointStiffness[1] << " " <<  jointStiffness[2] << "  "<< jointStiffness[3] << " " << jointStiffness[4] << " " <<  jointStiffness[5] << " " << jointStiffness[6];
             std::string msg_stiff_0(ss_stiff_0.str());
             GetConsole()->Print(msg_stiff_0);
+
+            std::ostringstream ss_curr_stiff;
+            ss_curr_stiff <<"Current Stiffness: " <<curr_stiffness[0] << " " << curr_stiffness[1] << " " <<  curr_stiffness[2] << "  "<< curr_stiffness[3] << " " << curr_stiffness[4] << " " <<  curr_stiffness[5] << " " << curr_stiffness[6];
+            std::string msg_curr_stiff(ss_curr_stiff.str());
+            GetConsole()->Print(msg_curr_stiff);
 
             std::ostringstream ss_stiff;
             ss_stiff <<"Stiffness Commands: " <<cmd_stiffness[0] << " " << cmd_stiffness[1] << " " <<  cmd_stiffness[2] << "  "<< cmd_stiffness[3] << " " << cmd_stiffness[4] << " " <<  cmd_stiffness[5] << " " << cmd_stiffness[6];

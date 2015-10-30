@@ -1,0 +1,42 @@
+Tool Calibration parameters:
+
+-----  Black Plate  -------
+m: 0.068kg
+
+----- Adaptor Plate -------
+m: 0.218 kg
+
+----- Adaptor Plate + Black Plate (Kuka corner) -------
+m: 0.286 kg
+z: 20mm
+
+***************************************
+
+----- Empty holder tool -----
+m: 0.365 kg
+
+----- Empty holder tool + Adapter Plate + Black Plate-----
+m: 0.651 kg
+z: 100mm
+
+***************************************
+
+----- Barret Hand -----
+m: 1.340 kg
+
+----- Barret + Adapter Plate + Black Plate-----
+m: 1.626 kg
+z: 90mm
+
+***************************************
+----- Roller -----
+m: 0.937 kg
+x: -30mm
+z: 
+
+----- Roller + Adapter Plate + Black Plate-----
+m: 1.626 kg
+z: 
+
+
+
