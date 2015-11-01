@@ -32,11 +32,12 @@ z: 90mm
 ----- Roller -----
 m: 0.937 kg
 x: -30mm
-z: 
+z: 100mm
 
 ----- Roller + Adapter Plate + Black Plate-----
-m: 1.626 kg
-z: 
+m: 1.223 kg
+x: -30mm
+z: 120mm
 
 
 
