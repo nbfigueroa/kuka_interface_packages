@@ -71,7 +71,7 @@ class RobotStateSubscriber : public RobotInterface
     IndicesVector joint_map;
     ros::ServiceServer mService;
 
-    bool bFilter, bGrav, bSync, bGrav_first;
+    bool bFilter, bGrav, bSync, bGrav_first, bPos_first, bVel_first;
     int bControl;
     bool sub_pose, sub_stiff, sub_ft;
     CDDynamics *filter;

@@ -45,8 +45,13 @@ RobotInterface::Status RobotStateSubscriber::RobotInit(){
 	actuators.SetActuatorsList(mRobot->GetActuators());
 	sensors.SetSensorsList(mRobot->GetSensors());
 
-	jointMax[0] = 160;jointMax[1] = 110;jointMax[2] = 160;jointMax[3] = 110;jointMax[4] = 160;jointMax[5] = 110;jointMax[6] = 160;
-	jointMin[0] = -160;jointMin[1] = -110;jointMin[2] = -160;jointMin[3] = -110;jointMin[4] = -160;jointMin[5] = -110;jointMin[6] = -160;
+    jointMax[0] = 130;jointMax[1] = 105;jointMax[2] = 130;jointMax[3] = 105;jointMax[4] = 130;jointMax[5] = 105;jointMax[6] = 130;
+    jointMin[0] = -130;jointMin[1] = -105;jointMin[2] = -130;jointMin[3] = -105;jointMin[4] = -130;jointMin[5] = -105;jointMin[6] = -130;
+
+
+    /********** Specific for RTKRobotArm (KUKA) ****************/
+/*	joint_lims[0] = 150;joint_lims[1] = 107;joint_lims[2] = 150; joint_lims[3] = 107;
+    joint_lims[4] = 150;joint_lims[5] = 115;joint_lims[6] = 150;*/
 
 	//--- Initializing type of interface ---//
 	pXmlTree options = GetOptionTree();
@@ -133,6 +138,9 @@ RobotInterface::Status RobotStateSubscriber::RobotInit(){
 	bControl = 0;
 	bGrav = false;
     bGrav_first = true;
+    bPos_first = true;
+    bVel_first = true;
+
 
 	sub_pose = false;
 	sub_stiff = false;
@@ -378,7 +386,7 @@ RobotInterface::Status RobotStateSubscriber::RobotUpdateCore(){
 
 
             // Checks for grav_comp and individual joint locks
-            float stiff_thres = 200.0;
+            float stiff_thres = 100.0;
             int stiff_low = 0, stiff_lock = 0;
             for(int i=0;i<ndof;i++){
                 // Check if commanded stiffness is lower than the gravcomp threshold
@@ -440,7 +448,6 @@ RobotInterface::Status RobotStateSubscriber::RobotUpdateCore(){
 
                     //--- Set Back Default Joint Damping Values ---//
                     cmd_damping = default_damp;
-//                    cmd_damping =cmd_stiffness*0.01;
 
                     ((LWRRobot*)(mRobot))->SetJointDamping(cmd_damping);
 
@@ -537,6 +544,10 @@ RobotInterface::Status RobotStateSubscriber::RobotUpdateCore(){
                     ///-- Send Joint Stiffness Command to Robot --//
                     ((LWRRobot*)mRobot)->SetJointStiffness(cmd_stiffness);
 
+                    ///--- Set Back Default Joint Damping Values ---///
+                    cmd_damping = default_damp;
+                    ((LWRRobot*)(mRobot))->SetJointDamping(cmd_damping);
+
                 }
 
             }
@@ -548,13 +559,19 @@ RobotInterface::Status RobotStateSubscriber::RobotUpdateCore(){
             std::string msg_ss_vals(ss_vals.str());
             GetConsole()->Print(msg_ss_vals);
 
-            std::ostringstream ss_stiff_0;
-            ss_stiff_0 <<"Desired Stiffness: " <<jointStiffness[0] << " " << jointStiffness[1] << " " <<  jointStiffness[2] << "  "<< jointStiffness[3] << " " << jointStiffness[4] << " " <<  jointStiffness[5] << " " << jointStiffness[6];
-            std::string msg_stiff_0(ss_stiff_0.str());
-            GetConsole()->Print(msg_stiff_0);
+//            std::ostringstream ss_stiff_0;
+//            ss_stiff_0 <<"Desired Stiffness: " <<jointStiffness[0] << " " << jointStiffness[1] << " " <<  jointStiffness[2] << "  "<< jointStiffness[3] << " " << jointStiffness[4] << " " <<  jointStiffness[5] << " " << jointStiffness[6];
+//            std::string msg_stiff_0(ss_stiff_0.str());
+//            GetConsole()->Print(msg_stiff_0);
+
+//            std::ostringstream ss_stiff;
+//            ss_stiff <<"Stiffness Commands: " <<cmd_stiffness[0] << " " << cmd_stiffness[1] << " " <<  cmd_stiffness[2] << "  "<< cmd_stiffness[3] << " " << cmd_stiffness[4] << " " <<  cmd_stiffness[5] << " " << cmd_stiffness[6];
+//            std::string msg_stiff(ss_stiff.str());
+//            GetConsole()->Print(msg_stiff);
+
 
             std::ostringstream ss_stiff;
-            ss_stiff <<"Stiffness Commands: " <<cmd_stiffness[0] << " " << cmd_stiffness[1] << " " <<  cmd_stiffness[2] << "  "<< cmd_stiffness[3] << " " << cmd_stiffness[4] << " " <<  cmd_stiffness[5] << " " << cmd_stiffness[6];
+            ss_stiff <<"Position Commands: " <<cmd_positions[0] << " " << cmd_positions[1] << " " <<  cmd_positions[2] << "  "<< cmd_positions[3] << " " << cmd_positions[4] << " " <<  cmd_positions[5] << " " << cmd_positions[6];
             std::string msg_stiff(ss_stiff.str());
             GetConsole()->Print(msg_stiff);
 
@@ -765,70 +782,133 @@ int RobotStateSubscriber::RespondToConsoleCommand(const string cmd, const vector
 ///-- Callback for the desired joint state for standard type (JointState)--//
 void RobotStateSubscriber::jointStateCallback(const sensor_msgs::JointState::ConstPtr &msg)
 {
-//    if(!bGrav)
-//    {
-        ///--- Set desired joint velocities or positions ---//
-        if(init_mode == INTERFACE_VELOCITY) {
-            if(msg->velocity.size() != ndof) {
-                cout<<"Size mismatch in velocity!"<<endl;
-                return;
-            }
+//        ///--- Set desired joint velocities or positions ---//
+//        if(init_mode == INTERFACE_VELOCITY) {
+//            if(msg->velocity.size() != ndof) {
+//                cout<<"Size mismatch in velocity!"<<endl;
+//                return;
+//            }
 
-            double d = ((LWRRobot*)mRobot)->GetSamplingTime();
-            for(int i=0;i<ndof;i++){
-                jointVelocities(i) = msg->velocity[i];
-            }
+//            double d = ((LWRRobot*)mRobot)->GetSamplingTime();
+//            for(int i=0;i<ndof;i++){
+//                jointVelocities(i) = msg->velocity[i];
+//            }
 
-        } else {
-            if (bControl==1){
-                if(msg->position.size() != ndof) {
-                    cout<<"Size mismatch in position!"<<endl;
-                    return;
-                }
-                for(int i=0;i<ndof;i++){
-                    jointPositions(i) = msg->position[i];
-                }
-
-            }
-        }
-//    }
-
+//        } else {
+//            if (bControl==1){
+//                if(msg->position.size() != ndof) {
+//                    cout<<"Size mismatch in position!"<<endl;
+//                    return;
+//                }
+//                for(int i=0;i<ndof;i++){
+//                    jointPositions(i) = msg->position[i];
+//                }
+//            }
+//        }
 }
 
 
 ///-- Callback for the desired joint state for custom type (JointStateImpedance)--//
 void RobotStateSubscriber::jointStateImpedanceCallback(const kuka_fri_bridge::JointStateImpedance::ConstPtr &msg)
-{
+{  
 
-    ///--- Set desired joint velocities or positions ---//
-    if(init_mode == INTERFACE_VELOCITY) {
-        if(msg->velocity.size() != ndof) {
-            cout<<"Size mismatch in velocity!"<<endl;
-            return;
+    if (bControl==1){
+
+
+        ///--- Set desired joint velocities or positions ---//
+        if(msg->position.size() == ndof) {
+
+            if (bPos_first){
+                GetConsole()->Print("TRANSITION TO POSITION INTERFACE");
+
+                sensors.ReadSensors();
+                cmd_positions = sensors.GetJointPositions();
+                for(int i=0;i<ndof;i++)
+                    jointPositions[i] = cmd_positions[joint_map[i]];
+
+                filter->SetState(jointPositions);
+                filter->SetTarget(jointPositions);
+                filtered_joints.Resize(ndof);
+                actuators.SetJointPositions(cmd_positions);
+                actuators.WriteActuators();
+
+
+                for(int i=0;i<ndof;i++)
+                    jointVelocities(i) = 0;
+
+                bPos_first = false;
+                bVel_first = true;
+
+            }
+            else{
+                init_mode = INTERFACE_POSITION;
+                GetConsole()->Print("POSITION INTERFACE");
+                bFilter = true;
+                for(int i=0;i<ndof;i++)
+                    jointPositions(i) = msg->position[i];
+            }
+
         }
 
-        double d = ((LWRRobot*)mRobot)->GetSamplingTime();
-        for(int i=0;i<ndof;i++){
-            jointVelocities(i) = msg->velocity[i];
+        if(msg->velocity.size() == ndof) {
+
+            if (bVel_first){
+                GetConsole()->Print("TRANSITION TO VELOCITY INTERFACE");
+
+                sensors.ReadSensors();
+                cmd_positions = sensors.GetJointPositions();
+                for(int i=0;i<ndof;i++)
+                    jointPositions[i] = cmd_positions[joint_map[i]];
+
+                filter->SetState(jointPositions);
+                filter->SetTarget(jointPositions);
+                filtered_joints.Resize(ndof);
+                actuators.SetJointPositions(cmd_positions);
+                actuators.WriteActuators();
+
+                bVel_first = false;
+                bPos_first = true;
+            }
+            else{
+                init_mode = INTERFACE_VELOCITY;
+                GetConsole()->Print("VELOCITY INTERFACE");
+                bFilter = false;
+                for(int i=0;i<ndof;i++)
+                    jointVelocities(i) = msg->velocity[i];
+            }
+
         }
 
-    } else {
-        if (bControl==1){
-            if(msg->position.size() != ndof) {
-                cout<<"Size mismatch in position!"<<endl;
-                return;
-            }
-            for(int i=0;i<ndof;i++){
-                jointPositions(i) = msg->position[i];
-            }
-
+        ///--- Set desired joint stiffness ---//
+        if(msg->stiffness.size() == ndof) {
+            for(int i=0;i<ndof;i++)
+                jointStiffness(i) = msg->stiffness[i];
         }
     }
 
-    ///--- Set joint stiffness ---//
-    for(int i=0;i<ndof;i++)
-        jointStiffness(i) = msg->stiffness[i];
+    //    if(init_mode == INTERFACE_VELOCITY) {
+    //        if(msg->velocity.size() != ndof) {
+    //            cout<<"Size mismatch in velocity!"<<endl;
+    //            return;
+    //        }
 
+    //        double d = ((LWRRobot*)mRobot)->GetSamplingTime();
+    //        for(int i=0;i<ndof;i++){
+    //            jointVelocities(i) = msg->velocity[i];
+    //        }
+
+    //    } else {
+    //        if (bControl==1){
+    //            if(msg->position.size() != ndof) {
+    //                cout<<"Size mismatch in position!"<<endl;
+    //                return;
+    //            }
+    //            for(int i=0;i<ndof;i++){
+    //                jointPositions(i) = msg->position[i];
+    //            }
+
+    //        }
+    //    }
 }
 
 
