@@ -32,6 +32,11 @@ To configure the bridge for either position or velocity control interface, you h
 </Options>
 ```
 
+#### Running the bridge:
+```
+rosrun kuka_fri_bridge run_lwr.sh
+```
+
 Once this is done, run the script in the teach pad correctly until you get the message ```FRI Succesfully opened```, then you must press the ```PageDown`` key twice and afterwords type:
 ```
 KUKA> control 1
