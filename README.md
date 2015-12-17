@@ -61,7 +61,10 @@ As seen in the diagram, besides the joint state message described above, the bri
   ```
 The names are self-explanatory.
 
-#### Set-up:
+#### Running the bridge:
+```
+rosrun kuka_fri_bridge run_lwr.sh
+```
 Run the script in the teach pad correctly until you get the message ```FRI Succesfully opened```, the you must type the ```PageDown`` key twice and afterwords type:
 ```
 KUKA> control 2
