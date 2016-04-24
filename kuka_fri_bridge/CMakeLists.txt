@@ -161,5 +161,5 @@ include(${rtk_pkg_tools_SOURCE_DIR}/rtk_create_symlinks.cmake)
 #   target_link_libraries(${PROJECT_NAME}-test ${PROJECT_NAME})
 # endif()
 
-## Add folders to be run by python nosetests
-# catkin_add_nosetests(test)
+set(rtk_modules kuka_fri_bridge)
+

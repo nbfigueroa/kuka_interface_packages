@@ -1,0 +1,28 @@
+<Config>
+<Packages>   kuka_robot_model  kuka_fri_bridge  </Packages>
+    <World> Examples/BasicWorld
+
+     </World>
+
+    <Robot> KUKA friction
+    	<Period> 0.002 </Period>
+    	<Name> KUKA
+      </Name>
+        <RobotModule> RobotStatePublisher
+            <Options>
+            	<Arm> right </Arm>
+            </Options>
+        </RobotModule>
+        <RobotModule> RobotStateSubscriber
+            <Options>
+            	<CtrlInterface> velocity </CtrlInterface>
+            </Options>
+        </RobotModule> 
+        <ControlMode>   position    </ControlMode>
+        <Args>                    </Args> 
+    </Robot>
+<Simulator>
+<Period> 0.002 </Period>
+</Simulator>
+</Config>
+

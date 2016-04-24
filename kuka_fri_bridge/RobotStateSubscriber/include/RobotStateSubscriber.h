@@ -55,7 +55,6 @@ class RobotStateSubscriber : public RobotInterface
     ros::Subscriber cartStateSubscriber;
     ros::Subscriber ftStateSubscriber;
     ros::Subscriber stiffStateSubscriber;
-    ros::Subscriber chatterSub;
 
     RevoluteJointActuatorGroup actuators;
     RevoluteJointSensorGroup sensors;

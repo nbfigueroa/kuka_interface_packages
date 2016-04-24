@@ -27,31 +27,30 @@ RobotInterface::Status RobotStatePublisher::RobotInit(){
 
     mLWRRobot = (LWRRobot*)mRobot;
 
+    ///--- Set Node Name --- ///
     string nodename = mRobot->GetName();
-    nodename += "_MIRROR";
-
+    nodename += "_BRIDGE";
     nh = mRobot->InitializeROS(nodename);
-
 	GetConsole()->Print("Robot Init Publisher");
-	float new_sampling_time = 0.002;
-//	((LWRRobot*)(mRobot))->SetSamplingTime(new_sampling_time);
+
+    ///--- Setting Sampling Time --- ///
+    float new_sampling_time = 0.002;
 	mLWRRobot->SetSamplingTime(new_sampling_time);
-//	dt = ((LWRRobot*)(mRobot))->GetSamplingTime();
 	dt = mLWRRobot->GetSamplingTime();
 	std::ostringstream ss;
 	ss << "DT: " << dt;
 	std::string msg(ss.str());
 	GetConsole()->Print(msg);
 
-
     string topicName;
-
     ///- Publish Joint State Message -///
-    topicName = "/joint_states";
+    topicName = mRobot->GetName();
+    topicName += "/joint_states";
     jointStatePublisher = nh->advertise<sensor_msgs::JointState>(topicName,3);
 
     ///- Publish Joint State Impedance Message -///
-    topicName = "/joint_imp_states";
+    topicName = mRobot->GetName();
+    topicName += "/joint_imp_states";
     jointStateImpedancePublisher = nh->advertise<kuka_fri_bridge::JointStateImpedance>(topicName,3);
 
     ///- Publish Cartesian Pose Message -///
@@ -69,24 +68,20 @@ RobotInterface::Status RobotStatePublisher::RobotInit(){
     topicName += "/Stiff";
     stiffPublisher = nh->advertise<geometry_msgs::TwistStamped>(topicName,3);
 
+
+
     mSensorsGroup.SetSensorsList(mRobot->GetSensors());
-
-
     int linkid = mRobot->GetLinkIndex("TOOL");
 
 
     mKinematicChain.SetRobot(mRobot);
-    //mKinematicChain.Create(0,0,mRobot->GetLinkIndex("TOOLPLATE"));
-
     mKinematicChain.Create(0,0,linkid);
     mKinematicChain.BuildJacobian();
 
     mJacobian.Resize(6,mRobot->GetDOFCount());
     currVel.Resize(6);
-
     currVel_filtered.Resize(6);
     jointVel.Resize(mRobot->GetDOFCount());
-
 
     velocityFilter.Init(6,4);
     velocityFilter.SetSamplingPeriod(0.002);
@@ -126,16 +121,15 @@ RobotInterface::Status RobotStatePublisher::RobotInit(){
     jointStateImpedanceMsg.stiffness.resize(ndof);
     jointStateImpedanceMsg.name.resize(ndof);
 
-
+    ///--- Get Robot Type (left/right) ---//
     char buf[255];
     pXmlTree options = GetOptionTree();
     string which_arm;
     if(options) {
-    	which_arm = options->CGet("Options.Arm", string("right"));
+        which_arm = options->FindData("Options.Arm");
     } else {
-    	which_arm = "right";
+        which_arm = "right";
     }
-    cout<<"Using as "<<which_arm<<" arm";
 
     for(int i=0; i<ndof; ++i) {
     	sprintf(buf, "%s_arm_%d_joint",which_arm.c_str(), i);
@@ -144,11 +138,9 @@ RobotInterface::Status RobotStatePublisher::RobotInit(){
     }
 
 
+
     topicName = mRobot->GetName();
     topicName += "/CoreRate";
-    //rosrt::init();
-    //ratePublisher = new rosrt::Publisher<std_msgs::Empty>(*nh,topicName,1,10,std_msgs::Empty());
-    //emptyMsg  = ratePublisher->allocate();
 
     return STATUS_OK;
 }

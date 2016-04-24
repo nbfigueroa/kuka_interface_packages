@@ -33,8 +33,6 @@
 
 #include "KUKARobotModel/LWRRobot.h"
 
-// ROS service
-
 class RobotStatePublisher : public RobotInterface
 {
     KinematicChain mKinematicChain;
@@ -57,8 +55,7 @@ class RobotStatePublisher : public RobotInterface
     ros::Publisher ftPublisher;
     ros::Publisher stiffPublisher;
     ros::NodeHandle * nh;
-    //a realtime publisher that tuns in realtime loop so that the rate of updatecore can be measured by rostopic hz
-    //    rosrt::Publisher<std_msgs::Empty> * ratePublisher;
+
     std_msgs::EmptyPtr emptyMsg;
     sensor_msgs::JointState jointStateMsg;
     kuka_fri_bridge::JointStateImpedance jointStateImpedanceMsg;
@@ -71,12 +68,9 @@ class RobotStatePublisher : public RobotInterface
     RevoluteJointSensorGroup mSensorsGroup;
     Vector3 currEEPos;
     Eigen::Matrix3d rot_Eigen;
-   // Eigen::Quaternion<double> rot_quat;
     Matrix3 rot_MathLib;
     Vector  eeFT;
     Vector  eeStiff;
-
-    // ROS Service
 
 
 private:

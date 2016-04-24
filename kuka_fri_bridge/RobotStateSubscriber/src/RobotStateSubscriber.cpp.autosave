@@ -103,7 +103,6 @@ RobotInterface::Status RobotStateSubscriber::RobotInit(){
         if (nEndEffectorId == -1)
             GetConsole()->Print("ERROR: End effector not found");
 
-
     ///--- Subscribers for Joint Impedance control ---//
     string topicName = mRobot->GetName();
     topicName += "/joint_cmd";
