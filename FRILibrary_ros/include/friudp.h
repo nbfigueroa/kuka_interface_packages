@@ -28,7 +28,11 @@
       
 [FH]}}
 */ 
-/**	\addtogroup friRemoteLib	\brief Library for FRI (FastResearchInterface) *//* @{ */
+/**
+	\addtogroup friRemoteLib
+	\brief Library for FRI (FastResearchInterface) 
+*/
+/* @{ */
 /** *************************************************************************
  \author (Guenter Schreiber)
 \file
@@ -70,7 +74,7 @@
 #endif
 
 
-#define FRI_DEFAULT_SERVER_PORT 49938
+#define FRI_DEFAULT_SERVER_PORT 49937
 
 #ifdef QNX
 #define HAVE_TIME_STAMP_RECEIVE
