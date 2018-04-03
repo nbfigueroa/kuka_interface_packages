@@ -15,7 +15,7 @@
         </RobotModule>
         <RobotModule> RobotStateSubscriber
             <Options>
-            	<CtrlInterface> velocity </CtrlInterface>
+            	<CtrlInterface> position </CtrlInterface>
             </Options>
         </RobotModule> 
         <ControlMode>   position    </ControlMode>
