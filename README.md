@@ -8,7 +8,7 @@ This repo includes packages needed to control the KUKA Robots with a modular int
 ---
 ###Funcionality
 
-This package offers a bridge control interface for the KUKA robot using robot-toolkit. This way, instead of having your controllers implemented within the lwr-interface framework (as most robot-toolkit examples do), we facilitate a modular architecture, where control policies/motion planners/joint contollers can be implemented in a seperate node and the ```kuka_fri_bridge``` deals with setting the control modes and bi-directional communication with the robot. It provides two types of control modes for your convenience.
+This package offers a bridge control interface for the KUKA robot using robot-toolkit. This way, instead of having your controllers  implemented within the lwr-interface framework (as most robot-toolkit examples do), we facilitate a modular architecture, where control policies/motion planners/joint controllers can be implemented in a separate node and the ```kuka_fri_bridge``` deals with setting the control modes and bi-directional communication with the robot. It provides two types of control modes for your convenience.
 
 ####1. Joint Impedance Control Mode:
 
@@ -18,10 +18,10 @@ The joint impedance control mode has two control interfaces: ***position*** and 
 
 From your own node you have to publish **joint commands** which can be position+stiffness or velocity+stiffness. The bridge will then publish the current **joint state** to the standard ```sensor_msgs/JointState``` message with topic name ```/joint_states``` which includes positions/velocities/effort. 
 
-If you want to read the joint stiffness as well, you can subscribed to the topic named ```/joint_imp_states```, which is of our custom type ```kuka_fri_bridge/JointStateImpedance``` and includes all the measurements from former message + joint stiffnesses.
+If you want to read the joint stiffness as well, you can subscribe to the topic named ```/joint_imp_states```, which is of our custom type ```kuka_fri_bridge/JointStateImpedance``` and includes all the measurements from former message + joint stiffnesses.
 
 Similarly, there are two message options for the joint commands:  
-  1. A ```sensor_msgs/JointState``` message type which has to be published  to ```/KUKA/joint_cmd```. With this message you can only set position/velcoties. The stiffness will be set with the default values (500 Nm/rad).
+  1. A ```sensor_msgs/JointState``` message type which has to be published to ```/KUKA/joint_cmd```. With this message you can only set position/velcoties. The stiffness will be set with the default values (500 Nm/rad).
   2. A ```kuka_fri_bridge/JointStateImpedance``` message type which has to be published to ```/KUKA/joint_imp_cmd```. With this message you **have to** set position/velocity and stiffness. 
   
 #### Set-up:
@@ -37,7 +37,7 @@ To configure the bridge for either position or velocity control interface, you h
 rosrun kuka_fri_bridge run_lwr.sh
 ```
 
-Once this is done, run the script in the teach pad correctly until you get the message ```FRI Succesfully opened```, then you must press the ```PageDown`` key twice and afterwords type:
+Once this is done, run the script in the teach pad correctly until you get the message ```FRI Succesfully opened```, then you must press the ```PageDown`` key twice and afterwards type:
 ```
 KUKA> control 1
 ```
@@ -45,7 +45,7 @@ in the ```kuka_fri_bridge``` terminal.  The bridge will now be waiting for the s
 
 ####2. Cartesian Impedance Control Mode: 
 
-This control mode has only 1 interface posibility and it is by sending pose (position/orientation), forces/torques and stiffness values for the end-effector, these are expected to be published in the following topics:
+This control mode has only 1 interface possibility and it is by sending pose (position/orientation), forces/torques and stiffness values for the end-effector, these are expected to be published in the following topics:
   ```
   /KUKA/des_ee_pose
   /KUKA/des_ee_ft
@@ -65,7 +65,7 @@ The names are self-explanatory.
 ```
 rosrun kuka_fri_bridge run_lwr.sh
 ```
-Run the script in the teach pad correctly until you get the message ```FRI Succesfully opened```, the you must type the ```PageDown`` key twice and afterwords type:
+Run the script in the teach pad correctly until you get the message ```FRI Successfully opened```, the you must type the ```PageDown`` key twice and afterwards type:
 ```
 KUKA> control 2
 ```
