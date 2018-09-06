@@ -6,11 +6,11 @@ This repo includes packages needed to control the KUKA Robots with a modular int
 - [motion-generators](https://github.com/epfl-lasa/motion-generators) (from epfl-lasa)
 
 ---
-###Funcionality
+### Funcionality
 
 This package offers a bridge control interface for the KUKA robot using robot-toolkit. This way, instead of having your controllers implemented within the lwr-interface framework (as most robot-toolkit examples do), we facilitate a modular architecture, where control policies/motion planners/joint contollers can be implemented in a seperate node and the ```kuka_fri_bridge``` deals with setting the control modes and bi-directional communication with the robot. It provides two types of control modes for your convenience.
 
-####1. Joint Impedance Control Mode:
+#### 1. Joint Impedance Control Mode:
 
 The joint impedance control mode has two control interfaces: ***position*** and ***velocity***. Following is a diagram of the control flow. 
 
