@@ -1,7 +1,7 @@
 # kuka_interface_packages
 This repo includes packages needed to control the KUKA Robots with a modular interface. (i.e. as a seperate "KUKA" bridge mode) in ROS with robot-toolkit.
 
-###Dependencies
+### Dependencies
 - [robot-toolkit](https://github.com/epfl-lasa/robot-toolkit) (from epfl-lasa)
 - [motion-generators](https://github.com/epfl-lasa/motion-generators) (from epfl-lasa)
 
